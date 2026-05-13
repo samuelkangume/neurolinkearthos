@@ -1,4 +1,4 @@
-import { Bell, Search, Sparkles, User, Globe2 } from "lucide-react";
+import { Bell, Search, Sparkles, User, Globe2, LogIn, LogOut } from "lucide-react";
 
 const tabs = [
   "Dashboard",
@@ -9,10 +9,19 @@ const tabs = [
   "Environment",
   "Alerts",
   "Analytics",
-  "Settings",
 ];
 
-export function TopNav({ onAssistant }: { onAssistant: () => void }) {
+export function TopNav({
+  onAssistant,
+  onLogin,
+  onLogout,
+  user,
+}: {
+  onAssistant: () => void;
+  onLogin: () => void;
+  onLogout: () => void;
+  user: { email: string; role: string } | null;
+}) {
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 backdrop-blur-xl bg-background/60">
       <div className="mx-auto max-w-[1500px] px-4 lg:px-8 h-16 flex items-center gap-6">
@@ -47,10 +56,10 @@ export function TopNav({ onAssistant }: { onAssistant: () => void }) {
 
         <div className="flex-1" />
 
-        <div className="hidden md:flex items-center gap-2 px-3 h-9 rounded-xl bg-white/5 border border-border/60 w-64">
+        <div className="hidden md:flex items-center gap-2 px-3 h-9 rounded-xl bg-white/5 border border-border/60 w-56">
           <Search className="h-4 w-4 text-muted-foreground" />
           <input
-            placeholder="Search systems, sensors, regions…"
+            placeholder="Search systems, sensors…"
             className="bg-transparent outline-none text-xs flex-1 placeholder:text-muted-foreground"
           />
           <kbd className="text-[10px] font-mono text-muted-foreground border border-border rounded px-1">
@@ -71,9 +80,32 @@ export function TopNav({ onAssistant }: { onAssistant: () => void }) {
           NEURO AI
         </button>
 
-        <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-secondary/30 to-primary/30 grid place-items-center">
-          <User className="h-4 w-4" />
-        </div>
+        {user ? (
+          <div className="flex items-center gap-2">
+            <div className="hidden sm:block text-right leading-tight">
+              <div className="text-xs font-medium truncate max-w-[120px]">{user.email}</div>
+              <div className="text-[10px] font-mono text-glow-green">{user.role}</div>
+            </div>
+            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-secondary/30 to-primary/30 grid place-items-center">
+              <User className="h-4 w-4" />
+            </div>
+            <button
+              onClick={onLogout}
+              className="h-9 w-9 grid place-items-center rounded-xl bg-white/5 hover:bg-white/10"
+              aria-label="Sign out"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={onLogin}
+            className="flex items-center gap-2 h-9 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-border text-xs font-medium"
+          >
+            <LogIn className="h-4 w-4" />
+            <span className="hidden sm:inline">Sign in</span>
+          </button>
+        )}
       </div>
     </header>
   );
