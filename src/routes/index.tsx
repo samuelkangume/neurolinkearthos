@@ -15,6 +15,10 @@ import { RoboticsLive } from "@/components/neuro/RoboticsLive";
 import { WasteModule } from "@/components/neuro/WasteModule";
 import { AdvancedModules } from "@/components/neuro/AdvancedModules";
 import { ImpactModule } from "@/components/neuro/ImpactModule";
+import { SpacePhysics } from "@/components/neuro/SpacePhysics";
+import { RadiationModule } from "@/components/neuro/RadiationModule";
+import { PollutionModule } from "@/components/neuro/PollutionModule";
+import { VRDronesModule } from "@/components/neuro/VRDronesModule";
 import { RoleSwitcher } from "@/components/neuro/RoleSwitcher";
 import { AIAssistant } from "@/components/neuro/AIAssistant";
 import { LoginModal } from "@/components/neuro/LoginModal";
@@ -86,6 +90,10 @@ function Index() {
         <EarthMap />
         <DeepModules />
         <RoboticsLive />
+        <VRDronesModule />
+        <PollutionModule />
+        <RadiationModule />
+        <SpacePhysics />
         <WasteModule />
         <ConnectedSystems />
         <AdvancedModules />
