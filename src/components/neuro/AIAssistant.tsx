@@ -21,6 +21,14 @@ function reply(input: string): string {
     return "Global recycling rate 92% (+4.8% wk). 18,420 smart bins online; BIN-E18 (Lagos) at 96% — robot dispatched.";
   if (/alert|emergency|risk/.test(q))
     return "4 active signals: flood (high), pollution (med), power overload (med), radiation (low). Want me to open any?";
+  if (/solar|space|orbit|sat|kp/.test(q))
+    return "Kp 3.2 (quiet) · Solar flux 178 sfu · last flare C2.1. 142 sats nominal — DEEP-LINK 02 at L2 holding lock.";
+  if (/radiat|nuclear|reactor/.test(q))
+    return "Global avg dose 0.21 µSv/h. 2 anomalies: Chernobyl exclusion (1.42), Mars Sim-7 hab (12.6). Containment 100%.";
+  if (/vr|headset|immers/.test(q))
+    return "3 VR ops live · avg latency 22 ms. Want me to open the disaster sim or grid walkthrough?";
+  if (/drone|hybrid|aerial|ground/.test(q))
+    return "1,204 drones online. HX-DR-21 battery 34% — auto-routing to nearest charge pad.";
   if (/farm|agri|crop/.test(q))
     return "Agri-bots irrigating 18.4M ha. Iowa fields predicted +12% yield with 24% less water this season.";
   if (/help|what can|capab/.test(q))
@@ -78,7 +86,19 @@ export function AIAssistant({
           </div>
         </div>
 
-        <div ref={scrollRef} className="mt-4 h-80 overflow-y-auto space-y-2 pr-1">
+        <div className="mt-3 -mx-1 px-1 flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+          {["Energy status", "Show alerts", "Air quality", "Robot fleet", "Solar weather", "Radiation", "Connect VR", "Drone telemetry"].map((s) => (
+            <button
+              key={s}
+              onClick={() => send(s)}
+              className="shrink-0 text-[10px] px-2.5 py-1 rounded-full bg-white/5 border border-border hover:bg-primary/15 hover:text-glow-cyan hover:border-primary/40 transition-colors"
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+
+        <div ref={scrollRef} className="mt-2 h-72 overflow-y-auto space-y-2 pr-1">
           {msgs.length === 0 && (
             <>
               <div className="rounded-xl p-3 bg-white/5 border border-border text-xs">
