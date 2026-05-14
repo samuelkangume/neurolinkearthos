@@ -72,14 +72,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "NEUROLINK EARTH OS" },
+      { name: "description", content: "Earth OS is a futuristic AI-powered platform for global environmental and infrastructure management." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "NEUROLINK EARTH OS" },
+      { property: "og:description", content: "Earth OS is a futuristic AI-powered platform for global environmental and infrastructure management." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "NEUROLINK EARTH OS" },
+      { name: "twitter:description", content: "Earth OS is a futuristic AI-powered platform for global environmental and infrastructure management." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/91798f81-1757-4cfb-a57f-63b449f2df34/id-preview-bbc5fbbb--a04925e8-a14e-4c2e-9ac7-99721811fc0e.lovable.app-1778772244524.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/91798f81-1757-4cfb-a57f-63b449f2df34/id-preview-bbc5fbbb--a04925e8-a14e-4c2e-9ac7-99721811fc0e.lovable.app-1778772244524.png" },
     ],
     links: [
       {
