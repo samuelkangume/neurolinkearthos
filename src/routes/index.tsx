@@ -23,6 +23,9 @@ import { RoleSwitcher } from "@/components/neuro/RoleSwitcher";
 import { AIAssistant } from "@/components/neuro/AIAssistant";
 import { LoginModal } from "@/components/neuro/LoginModal";
 import { Footer } from "@/components/neuro/Footer";
+import { AudienceMatrix } from "@/components/neuro/AudienceMatrix";
+import { EnergyHub } from "@/components/neuro/EnergyHub";
+import { SystemHealth } from "@/components/neuro/SystemHealth";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -82,20 +85,23 @@ function Index() {
       <main>
         <Hero />
         <PlanetVitals />
-        <LiveEnergyChart />
         <DataFlow />
+        <AudienceMatrix />
         <ModuleGrid />
-        <EmergencyAlerts />
-        <LiveInsights />
-        <EarthMap />
-        <DeepModules />
+        <EnergyHub />
+        <LiveEnergyChart />
         <RoboticsLive />
         <VRDronesModule />
         <PollutionModule />
         <RadiationModule />
         <SpacePhysics />
+        <EmergencyAlerts />
+        <EarthMap />
         <WasteModule />
+        <DeepModules />
+        <LiveInsights />
         <ConnectedSystems />
+        <SystemHealth />
         <AdvancedModules />
         <ImpactModule />
         <RoleSwitcher />
