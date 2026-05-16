@@ -2,10 +2,13 @@ import { useState } from "react";
 import {
   X, Globe2, Lock, Mail, User, Building2, Landmark, Users, GraduationCap, Heart, Rocket, Shield, Tractor,
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable";
+import { toast } from "sonner";
 
 const ROLES = [
-  { key: "Personal", icon: User, desc: "Home energy, air, waste & local alerts.", features: ["Smart Home", "Personal AQI", "Recycling tracker", "Family alerts"] },
-  { key: "Team", icon: Users, desc: "Shared dashboards & collaborative ops.", features: ["Shared boards", "Mission planner", "Chat-with-AI", "Role permissions"] },
+  { key: "Personal", icon: User, desc: "Home energy, air, waste & local alerts.", features: ["Smart Home", "Personal AQI", "Recycling", "Family alerts"] },
+  { key: "Team", icon: Users, desc: "Shared dashboards & collaborative ops.", features: ["Shared boards", "Mission planner", "Chat-with-AI", "Permissions"] },
   { key: "Farmer", icon: Tractor, desc: "Smart agriculture, irrigation, yield AI.", features: ["Soil sensors", "Agri-bots", "Weather AI", "Crop yield"] },
   { key: "Company", icon: Building2, desc: "Operations, ESG, fleet & facilities.", features: ["Fleet ops", "ESG reports", "Carbon ledger", "Compliance"] },
   { key: "Government", icon: Landmark, desc: "Infrastructure, safety, city analytics.", features: ["Infra grid", "Public safety", "Disaster sim", "City KPIs"] },
@@ -16,47 +19,81 @@ const ROLES = [
   { key: "Space / Astronaut", icon: Rocket, desc: "Orbital ops, hab telemetry, deep-link.", features: ["Orbit mesh", "Hab telemetry", "Solar weather", "Deep-link"] },
 ];
 
+type Mode = "signin" | "signup";
+
 export function LoginModal({
   open,
   onOpenChange,
-  onLogin,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  onLogin: (user: { email: string; role: string }) => void;
 }) {
   const [email, setEmail] = useState("");
   const [pwd, setPwd] = useState("");
   const [role, setRole] = useState("Personal");
-  const [err, setErr] = useState("");
+  const [mode, setMode] = useState<Mode>("signin");
+  const [busy, setBusy] = useState(false);
 
   if (!open) return null;
   const cur = ROLES.find((r) => r.key === role)!;
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.includes("@") || pwd.length < 4) {
-      setErr("Enter a valid email and a password (4+ chars).");
+    if (!email.includes("@") || pwd.length < 6) {
+      toast.error("Enter a valid email and a password (6+ chars).");
       return;
     }
-    onLogin({ email, role });
-    onOpenChange(false);
-    setErr("");
+    setBusy(true);
+    try {
+      if (mode === "signup") {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password: pwd,
+          options: {
+            emailRedirectTo: window.location.origin,
+            data: { role },
+          },
+        });
+        if (error) throw error;
+        toast.success("Account created. Check your email to confirm, then sign in.");
+        setMode("signin");
+      } else {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password: pwd });
+        if (error) throw error;
+        // update role if user picked a different one
+        if (data.user) {
+          await supabase.from("profiles").update({ role }).eq("id", data.user.id);
+        }
+        toast.success(`Welcome back · signed in as ${role}`);
+        onOpenChange(false);
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Auth failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const google = async () => {
+    setBusy(true);
+    try {
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
+      });
+      if (result.error) toast.error(String((result as any).error?.message || "Google sign-in failed"));
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
     <div className="fixed inset-0 z-[60] grid place-items-center p-4 bg-background/80 backdrop-blur-xl animate-in fade-in">
       <div className="glass p-0 w-full max-w-3xl relative neon-border overflow-hidden">
-        <button
-          onClick={() => onOpenChange(false)}
-          className="absolute top-4 right-4 opacity-70 hover:opacity-100 z-10"
-          aria-label="Close"
-        >
+        <button onClick={() => onOpenChange(false)} className="absolute top-4 right-4 opacity-70 hover:opacity-100 z-10" aria-label="Close">
           <X className="h-4 w-4" />
         </button>
 
         <div className="grid md:grid-cols-[1.1fr_1fr]">
-          {/* Left: roles */}
           <div className="p-6 border-r border-border/50 bg-white/[0.02]">
             <div className="flex items-center gap-3 mb-5">
               <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-primary/30 to-secondary/30 grid place-items-center neon-border">
@@ -64,21 +101,18 @@ export function LoginModal({
               </div>
               <div>
                 <div className="font-display text-lg font-semibold leading-none">NEUROLINK EARTH</div>
-                <div className="text-[10px] font-mono text-glow-green tracking-[0.3em] mt-1">EARTH-OS · v4.2</div>
+                <div className="text-[10px] font-mono text-glow-green tracking-[0.3em] mt-1">EARTH-OS · LIVE</div>
               </div>
             </div>
-            <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2">
-              Who is signing in?
-            </div>
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Who is signing in?</div>
             <div className="grid grid-cols-2 gap-1.5 max-h-[320px] overflow-y-auto pr-1">
               {ROLES.map((r) => (
                 <button
                   key={r.key}
+                  type="button"
                   onClick={() => setRole(r.key)}
                   className={`text-left p-2.5 rounded-xl border text-xs flex items-center gap-2 transition-all ${
-                    role === r.key
-                      ? "bg-primary/15 border-primary/40 text-glow-cyan"
-                      : "bg-white/5 border-border text-muted-foreground hover:text-foreground"
+                    role === r.key ? "bg-primary/15 border-primary/40 text-glow-cyan" : "bg-white/5 border-border text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   <r.icon className="h-3.5 w-3.5 shrink-0" />
@@ -87,60 +121,66 @@ export function LoginModal({
               ))}
             </div>
             <div className="mt-4 p-3 rounded-xl bg-secondary/5 border border-secondary/20">
-              <div className="text-[10px] uppercase tracking-widest text-glow-green mb-1.5">
-                Unlocked for {cur.key}
-              </div>
+              <div className="text-[10px] uppercase tracking-widest text-glow-green mb-1.5">Unlocked for {cur.key}</div>
               <div className="flex flex-wrap gap-1.5">
                 {cur.features.map((f) => (
-                  <span key={f} className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 border border-border">
-                    {f}
-                  </span>
+                  <span key={f} className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 border border-border">{f}</span>
                 ))}
               </div>
               <p className="text-[11px] text-muted-foreground mt-2">{cur.desc}</p>
             </div>
           </div>
 
-          {/* Right: form */}
           <form onSubmit={submit} className="p-6 space-y-3">
-            <div className="font-display text-base font-semibold">Sign in to your Earth-OS</div>
-            <p className="text-[11px] text-muted-foreground -mt-2">
-              Zero-trust biometric link · NEURO mesh secured
-            </p>
+            <div className="flex items-center justify-between">
+              <div className="font-display text-base font-semibold">
+                {mode === "signin" ? "Sign in to Earth-OS" : "Create your Earth-OS account"}
+              </div>
+              <button
+                type="button"
+                onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+                className="text-[11px] text-glow-cyan hover:underline"
+              >
+                {mode === "signin" ? "New? Sign up" : "Have account?"}
+              </button>
+            </div>
+            <p className="text-[11px] text-muted-foreground -mt-2">Cross-device session · zero-trust mesh</p>
+
+            <button
+              type="button"
+              onClick={google}
+              disabled={busy}
+              className="w-full h-11 rounded-xl bg-white text-black text-sm font-medium flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50"
+            >
+              <svg className="h-4 w-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.99.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38z"/></svg>
+              Continue with Google
+            </button>
+
+            <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+              <span className="flex-1 h-px bg-border" /> or email <span className="flex-1 h-px bg-border" />
+            </div>
 
             <label className="block">
               <span className="text-[11px] uppercase tracking-widest text-muted-foreground">Email</span>
               <div className="mt-1 flex items-center gap-2 px-3 h-11 rounded-xl bg-white/5 border border-border focus-within:border-primary/40">
                 <Mail className="h-4 w-4 text-muted-foreground" />
-                <input
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@earth.os"
-                  className="flex-1 bg-transparent outline-none text-sm"
-                />
+                <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@earth.os" className="flex-1 bg-transparent outline-none text-sm" />
               </div>
             </label>
             <label className="block">
               <span className="text-[11px] uppercase tracking-widest text-muted-foreground">Password</span>
               <div className="mt-1 flex items-center gap-2 px-3 h-11 rounded-xl bg-white/5 border border-border focus-within:border-primary/40">
                 <Lock className="h-4 w-4 text-muted-foreground" />
-                <input
-                  type="password"
-                  value={pwd}
-                  onChange={(e) => setPwd(e.target.value)}
-                  placeholder="••••••••"
-                  className="flex-1 bg-transparent outline-none text-sm"
-                />
+                <input type="password" value={pwd} onChange={(e) => setPwd(e.target.value)} placeholder="••••••••" className="flex-1 bg-transparent outline-none text-sm" />
               </div>
             </label>
 
-            {err && <div className="text-xs text-destructive">{err}</div>}
-
             <button
               type="submit"
-              className="w-full h-11 rounded-xl bg-gradient-to-r from-primary to-secondary text-primary-foreground font-medium text-sm shadow-[0_0_30px_var(--cyan-glow)] hover:opacity-90"
+              disabled={busy}
+              className="w-full h-11 rounded-xl bg-gradient-to-r from-primary to-secondary text-primary-foreground font-medium text-sm shadow-[0_0_30px_var(--cyan-glow)] hover:opacity-90 disabled:opacity-50"
             >
-              Enter NEUROLINK as {role}
+              {busy ? "…" : mode === "signin" ? `Enter NEUROLINK as ${role}` : `Create ${role} account`}
             </button>
             <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
               <span className="status-dot" /> Biometric · Hardware key · Quantum-safe
