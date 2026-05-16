@@ -1,14 +1,14 @@
 import { Bell, Search, Sparkles, User, Globe2, LogIn, LogOut } from "lucide-react";
 
-const tabs = [
-  "Dashboard",
-  "Energy",
-  "Smart Home",
-  "Waste",
-  "Robotics",
-  "Environment",
-  "Alerts",
-  "Analytics",
+const tabs: { label: string; href: string }[] = [
+  { label: "Dashboard", href: "#top" },
+  { label: "Energy", href: "#energy" },
+  { label: "Network", href: "#energy-network" },
+  { label: "Robotics", href: "#robotics" },
+  { label: "Environment", href: "#environment" },
+  { label: "Alerts", href: "#alerts" },
+  { label: "Waste", href: "#waste" },
+  { label: "Analytics", href: "#analytics" },
 ];
 
 export function TopNav({
@@ -41,16 +41,17 @@ export function TopNav({
 
         <nav className="hidden lg:flex items-center gap-1 text-sm">
           {tabs.map((t, i) => (
-            <button
-              key={t}
+            <a
+              key={t.label}
+              href={t.href}
               className={`px-3 py-1.5 rounded-lg transition-colors ${
                 i === 0
                   ? "bg-primary/10 text-glow-cyan"
                   : "text-muted-foreground hover:text-foreground hover:bg-white/5"
               }`}
             >
-              {t}
-            </button>
+              {t.label}
+            </a>
           ))}
         </nav>
 

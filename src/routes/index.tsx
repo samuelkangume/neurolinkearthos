@@ -25,23 +25,18 @@ import { LoginModal } from "@/components/neuro/LoginModal";
 import { Footer } from "@/components/neuro/Footer";
 import { AudienceMatrix } from "@/components/neuro/AudienceMatrix";
 import { EnergyHub } from "@/components/neuro/EnergyHub";
+import { EnergyNetwork } from "@/components/neuro/EnergyNetwork";
 import { SystemHealth } from "@/components/neuro/SystemHealth";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "NEUROLINK EARTH — Operating System for a Smarter Planet" },
-      {
-        name: "description",
-        content:
-          "AI-powered platform unifying energy, environment, robotics, telecom and public safety into a single planetary intelligence system.",
-      },
+      { name: "description", content: "AI-powered planetary OS unifying energy, environment, robotics, telecom and public safety. Live sign-in, real NEURO AI, global energy network." },
       { property: "og:title", content: "NEUROLINK EARTH" },
-      {
-        property: "og:description",
-        content:
-          "Premium next-generation smart Earth operating system with environmental monitoring, smart energy, robotics and AI analytics.",
-      },
+      { property: "og:description", content: "Live Earth-OS with real authentication, AI assistant and global energy infrastructure links." },
     ],
   }),
   component: Index,
@@ -55,23 +50,35 @@ function Index() {
   const [user, setUser] = useState<SessionUser | null>(null);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("neuro_user");
-      if (raw) setUser(JSON.parse(raw));
-    } catch {}
+    let mounted = true;
+
+    const loadProfile = async (uid: string, email: string | null | undefined) => {
+      const { data } = await supabase.from("profiles").select("role").eq("id", uid).maybeSingle();
+      if (!mounted) return;
+      setUser({ email: email ?? "", role: data?.role ?? "Personal" });
+    };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+      if (session?.user) {
+        loadProfile(session.user.id, session.user.email);
+      } else {
+        setUser(null);
+      }
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) loadProfile(session.user.id, session.user.email);
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const handleLogin = (u: SessionUser) => {
-    setUser(u);
-    try {
-      localStorage.setItem("neuro_user", JSON.stringify(u));
-    } catch {}
-  };
-  const handleLogout = () => {
-    setUser(null);
-    try {
-      localStorage.removeItem("neuro_user");
-    } catch {}
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast.success("Signed out");
   };
 
   return (
@@ -88,18 +95,19 @@ function Index() {
         <DataFlow />
         <AudienceMatrix />
         <ModuleGrid />
-        <EnergyHub />
+        <section id="energy"><EnergyHub /></section>
+        <EnergyNetwork />
         <LiveEnergyChart />
-        <RoboticsLive />
+        <section id="robotics"><RoboticsLive /></section>
         <VRDronesModule />
-        <PollutionModule />
+        <section id="environment"><PollutionModule /></section>
         <RadiationModule />
         <SpacePhysics />
-        <EmergencyAlerts />
+        <section id="alerts"><EmergencyAlerts /></section>
         <EarthMap />
-        <WasteModule />
+        <section id="waste"><WasteModule /></section>
         <DeepModules />
-        <LiveInsights />
+        <section id="analytics"><LiveInsights /></section>
         <ConnectedSystems />
         <SystemHealth />
         <AdvancedModules />
@@ -108,7 +116,7 @@ function Index() {
       </main>
       <Footer />
       <AIAssistant open={aiOpen} onOpenChange={setAiOpen} />
-      <LoginModal open={loginOpen} onOpenChange={setLoginOpen} onLogin={handleLogin} />
+      <LoginModal open={loginOpen} onOpenChange={setLoginOpen} />
     </div>
   );
 }
