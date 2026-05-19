@@ -26,6 +26,10 @@ import { Footer } from "@/components/neuro/Footer";
 import { AudienceMatrix } from "@/components/neuro/AudienceMatrix";
 import { EnergyHub } from "@/components/neuro/EnergyHub";
 import { EnergyNetwork } from "@/components/neuro/EnergyNetwork";
+import { EnergyControlCenter } from "@/components/neuro/EnergyControlCenter";
+import { EnergyMarket } from "@/components/neuro/EnergyMarket";
+import { EarnHub } from "@/components/neuro/EarnHub";
+import { AlarmSystem } from "@/components/neuro/AlarmSystem";
 import { SystemHealth } from "@/components/neuro/SystemHealth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -96,6 +100,8 @@ function Index() {
         <AudienceMatrix />
         <ModuleGrid />
         <section id="energy"><EnergyHub /></section>
+        <EnergyControlCenter />
+        <EnergyMarket />
         <EnergyNetwork />
         <LiveEnergyChart />
         <section id="robotics"><RoboticsLive /></section>
@@ -112,11 +118,13 @@ function Index() {
         <SystemHealth />
         <AdvancedModules />
         <ImpactModule />
+        <EarnHub />
         <RoleSwitcher />
       </main>
       <Footer />
       <AIAssistant open={aiOpen} onOpenChange={setAiOpen} />
       <LoginModal open={loginOpen} onOpenChange={setLoginOpen} />
+      <AlarmSystem />
     </div>
   );
 }
