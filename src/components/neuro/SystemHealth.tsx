@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-  Activity, ShieldCheck, KeyRound, FlaskConical, CheckCircle2, AlertTriangle, Clock, Loader2,
+  Activity, ShieldCheck, KeyRound, FlaskConical, CheckCircle2, AlertTriangle, Clock, Loader2, Download, Filter, Search,
 } from "lucide-react";
 import { SectionHeader } from "./SectionHeader";
+import { toast } from "sonner";
 
 type Service = { name: string; latency: number; status: "ok" | "warn" | "down" };
 const SERVICES: Service[] = [
@@ -24,6 +25,8 @@ const INCIDENTS: Incident[] = [
   { id: "INC-2838", time: "11:54:44", level: "info", title: "Permission audit completed · 0 anomalies", src: "sec.audit" },
   { id: "INC-2837", time: "11:33:01", level: "info", title: "Smoke test 4.2.18 · all 218 checks passed", src: "ops.qa" },
   { id: "INC-2836", time: "11:02:27", level: "warn", title: "NX-077 robot battery low (18%) — dispatched to dock", src: "robotics.fleet" },
+  { id: "INC-2835", time: "10:48:11", level: "crit", title: "Radiation anomaly · Sector R-12 · auto-quarantine engaged", src: "env.radiation" },
+  { id: "INC-2834", time: "10:21:03", level: "info", title: "Carbon ledger settled · 2,841 tCO₂ traded on-chain", src: "energy.market" },
 ];
 
 const PERMISSIONS = [
@@ -32,12 +35,22 @@ const PERMISSIONS = [
   { role: "Company", scopes: ["read:fleet", "write:esg", "read:carbon"], count: 28401 },
   { role: "Defense", scopes: ["mesh:encrypted", "exec:drones", "read:threat"], count: 142 },
   { role: "Global Org.", scopes: ["read:treaty", "write:carbon-mkt", "exec:coord"], count: 38 },
+  { role: "Farmer", scopes: ["read:soil", "exec:agribots", "read:weather"], count: 1842034 },
+  { role: "Research/NGO", scopes: ["read:datasets", "write:reports"], count: 9842 },
+  { role: "Education", scopes: ["read:sandbox", "read:datasets"], count: 184201 },
+  { role: "Team", scopes: ["read:fleet", "write:ops"], count: 41204 },
+  { role: "Space/Astro.", scopes: ["read:orbital", "exec:satcom"], count: 412 },
 ];
+
+type Level = "all" | "info" | "warn" | "crit";
 
 export function SystemHealth() {
   const [smoke, setSmoke] = useState<{ phase: "idle" | "running" | "done"; pass: number; total: number }>({
     phase: "idle", pass: 0, total: 218,
   });
+  const [filter, setFilter] = useState<Level>("all");
+  const [query, setQuery] = useState("");
+  const [roleQuery, setRoleQuery] = useState("");
 
   useEffect(() => {
     if (smoke.phase !== "running") return;
@@ -54,18 +67,70 @@ export function SystemHealth() {
     return () => clearInterval(t);
   }, [smoke.phase]);
 
-  const startSmoke = () =>
-    setSmoke({ phase: "running", pass: 0, total: 218 });
+  const startSmoke = () => setSmoke({ phase: "running", pass: 0, total: 218 });
 
   const ok = SERVICES.filter((s) => s.status === "ok").length;
   const uptimePct = ((ok / SERVICES.length) * 100).toFixed(1);
+
+  const filteredIncidents = useMemo(() => {
+    return INCIDENTS.filter((i) => (filter === "all" || i.level === filter))
+      .filter((i) => !query || (i.title + i.src + i.id).toLowerCase().includes(query.toLowerCase()));
+  }, [filter, query]);
+
+  const filteredPerms = useMemo(
+    () => PERMISSIONS.filter((p) => !roleQuery || p.role.toLowerCase().includes(roleQuery.toLowerCase())),
+    [roleQuery]
+  );
+
+  const downloadSmokeReport = () => {
+    const ts = new Date().toISOString();
+    const report = [
+      "NEUROLINK EARTH · Smoke Test Report",
+      `Generated: ${ts}`,
+      `Uptime: ${uptimePct}%`,
+      `Checks: ${smoke.pass}/${smoke.total} passed`,
+      "",
+      "Services:",
+      ...SERVICES.map((s) => `  - ${s.name.padEnd(28)} ${s.status.toUpperCase().padEnd(5)} ${s.latency}ms`),
+      "",
+      "Recent incidents:",
+      ...INCIDENTS.map((i) => `  - [${i.level.toUpperCase()}] ${i.id} ${i.time} · ${i.title} (${i.src})`),
+      "",
+      "— end of report —",
+    ].join("\n");
+    const blob = new Blob([report], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `neurolink-smoke-${ts.slice(0, 10)}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Smoke test report downloaded");
+  };
+
+  const runRoleAudit = () => {
+    toast.success(`Role-based audit complete · ${PERMISSIONS.length} roles · 0 anomalies`);
+  };
+
+  const FilterBtn = ({ k, label }: { k: Level; label: string }) => (
+    <button
+      onClick={() => setFilter(k)}
+      className={`text-[10px] font-mono px-2 py-1 rounded-md border transition ${
+        filter === k
+          ? "bg-primary/20 border-primary/50 text-glow-cyan"
+          : "bg-white/[0.03] border-border text-muted-foreground hover:text-foreground"
+      }`}
+    >
+      {label}
+    </button>
+  );
 
   return (
     <section className="mx-auto max-w-[1500px] px-4 lg:px-8 py-12">
       <SectionHeader
         eyebrow="08 · Operations"
         title="System Health, Audit & Smoke Tests"
-        desc="Full visibility into the Earth-OS operations layer — service health, incident log, permission audit and one-tap smoke test for every connected subsystem."
+        desc="Full visibility into the Earth-OS operations layer — service health, filterable incident log, downloadable smoke reports and role-based permission auditor."
         right={
           <div className="px-3 py-1.5 rounded-full bg-secondary/10 border border-secondary/30 text-[11px] font-mono text-glow-green">
             UPTIME {uptimePct}%
@@ -137,11 +202,18 @@ export function SystemHealth() {
               />
             </div>
           )}
+          <button
+            onClick={downloadSmokeReport}
+            className="mt-2 w-full h-9 rounded-xl bg-white/[0.04] border border-border text-xs flex items-center justify-center gap-2 hover:bg-white/[0.08]"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Download smoke report (.txt)
+          </button>
         </div>
 
         {/* Incident log */}
         <div className="glass p-5 lg:col-span-2">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-glow-cyan" />
               <div className="text-xs font-mono uppercase tracking-widest text-muted-foreground">
@@ -152,8 +224,29 @@ export function SystemHealth() {
               <span className="status-dot" /> streaming
             </div>
           </div>
+
+          <div className="flex items-center gap-2 mb-3 flex-wrap">
+            <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+            <FilterBtn k="all" label="ALL" />
+            <FilterBtn k="info" label="INFO" />
+            <FilterBtn k="warn" label="WARN" />
+            <FilterBtn k="crit" label="CRIT" />
+            <div className="flex items-center gap-1.5 ml-auto flex-1 max-w-[240px] h-8 px-2 rounded-lg bg-white/[0.04] border border-border">
+              <Search className="h-3 w-3 text-muted-foreground" />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search incidents…"
+                className="bg-transparent text-xs outline-none flex-1 min-w-0"
+              />
+            </div>
+          </div>
+
           <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
-            {INCIDENTS.map((i) => (
+            {filteredIncidents.length === 0 && (
+              <div className="text-xs text-muted-foreground py-6 text-center">No incidents match this filter.</div>
+            )}
+            {filteredIncidents.map((i) => (
               <div
                 key={i.id}
                 className="flex items-start gap-3 p-3 rounded-xl bg-white/[0.03] border border-border text-xs"
@@ -176,7 +269,7 @@ export function SystemHealth() {
                 <div className="flex-1 min-w-0">
                   <div className="font-medium truncate">{i.title}</div>
                   <div className="text-[10px] font-mono text-muted-foreground mt-0.5">
-                    {i.id} · {i.src} · {i.time} UTC
+                    {i.id} · {i.src} · {i.time} UTC · {i.level.toUpperCase()}
                   </div>
                 </div>
               </div>
@@ -185,26 +278,40 @@ export function SystemHealth() {
         </div>
       </div>
 
-      {/* Permission audit */}
+      {/* Role-based Permission auditor */}
       <div className="mt-5 glass p-6">
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
           <div className="flex items-center gap-2">
             <ShieldCheck className="h-4 w-4 text-glow-green" />
             <div>
               <div className="text-xs font-mono uppercase tracking-widest text-muted-foreground">
-                Permission audit
+                Role-based permission auditor
               </div>
               <div className="font-display text-base font-semibold mt-1">
-                Zero-trust scopes by role · last audit clean
+                Zero-trust scopes by role · live filter
               </div>
             </div>
           </div>
-          <div className="px-3 py-1.5 rounded-full bg-secondary/10 border border-secondary/30 text-[11px] font-mono text-glow-green flex items-center gap-1.5">
-            <KeyRound className="h-3 w-3" /> 0 anomalies
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 h-8 px-2 rounded-lg bg-white/[0.04] border border-border w-[200px]">
+              <Search className="h-3 w-3 text-muted-foreground" />
+              <input
+                value={roleQuery}
+                onChange={(e) => setRoleQuery(e.target.value)}
+                placeholder="Filter role…"
+                className="bg-transparent text-xs outline-none flex-1 min-w-0"
+              />
+            </div>
+            <button
+              onClick={runRoleAudit}
+              className="px-3 h-8 rounded-lg bg-secondary/15 border border-secondary/40 text-glow-green text-[11px] font-mono flex items-center gap-1.5 hover:bg-secondary/25"
+            >
+              <KeyRound className="h-3 w-3" /> Run audit
+            </button>
           </div>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
-          {PERMISSIONS.map((p) => (
+          {filteredPerms.map((p) => (
             <div key={p.role} className="rounded-xl p-3 bg-white/[0.03] border border-border">
               <div className="text-[10px] font-mono uppercase tracking-widest text-glow-cyan">
                 {p.role}
