@@ -29,6 +29,8 @@ import { EnergyNetwork } from "@/components/neuro/EnergyNetwork";
 import { EnergyControlCenter } from "@/components/neuro/EnergyControlCenter";
 import { EnergyMarket } from "@/components/neuro/EnergyMarket";
 import { EarnHub } from "@/components/neuro/EarnHub";
+import { PayoutsHub } from "@/components/neuro/PayoutsHub";
+import { PricingPlans } from "@/components/neuro/PricingPlans";
 import { AlarmSystem } from "@/components/neuro/AlarmSystem";
 import { SystemHealth } from "@/components/neuro/SystemHealth";
 import { supabase } from "@/integrations/supabase/client";
