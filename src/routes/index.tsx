@@ -43,6 +43,7 @@ export const Route = createFileRoute("/")({
       { name: "description", content: "AI-powered planetary OS unifying energy, environment, robotics, telecom and public safety. Live sign-in, real NEURO AI, global energy network." },
       { property: "og:title", content: "NEUROLINK EARTH" },
       { property: "og:description", content: "Live Earth-OS with real authentication, AI assistant and global energy infrastructure links." },
+      { name: "google-site-verification", content: "2qZBmXfmz-7ppKq_VzLhvL8b0ZYC-tRGbc74rqQS1As" },
     ],
   }),
   component: Index,
