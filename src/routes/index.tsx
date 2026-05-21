@@ -121,6 +121,8 @@ function Index() {
         <AdvancedModules />
         <ImpactModule />
         <EarnHub />
+        <PayoutsHub />
+        <PricingPlans />
         <RoleSwitcher />
       </main>
       <Footer />
